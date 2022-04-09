@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <link href="../../node_modules/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        .layout-button {
+            display: block;
+            width: 64px;
+            height: 36px;
+            margin: auto;
+            padding: 0;
+            border: 1px solid var(--bs-teal);;
+            opacity: 0.6;
+        }
+
+        .layout-button.active,
+        .layout-button:active,
+        .layout-button:hover {
+            opacity: 0.9;
+        }
+
+        .layout-button > span {
+            display: block;
+            height: 100%;
+            background-color: var(--bs-teal);;
+        }
+
+        .layout-button.full > span {
+            width: 100%;
+        }
+
+        .layout-button.left > span {
+            width: 50%;
+        }
+
+        .layout-button.center > span {
+            width: 50%;
+            margin-left: 25%;
+        }
+
+        .layout-button.right > span {
+            width: 50%;
+            margin-left: 50%;
+        }
+
+        #videoWrapper {
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #video {
+            display: block;
+            width: 100%;
+        }
+
+        #videoLeft, #videoRight {
+            top: 0;
+            bottom: 0;
+            width: 0;
+            position: absolute;
+            background-color: #000;
+            opacity: 0.8;
+        }
+
+        #videoCenter {
+            top: 0;
+            bottom: 0;
+            width: 100%;
+            position: absolute;
+            background-color: transparent;
+            border: 2px solid var(--bs-teal);
+        }
+
+        #videoLeft {
+            left: 0;
+        }
+
+        #videoRight {
+            right: 0;
+        }
+    </style>
+</head>
+<body>
+<div class="container-fluid pt-3">
+    <div class="row mb-3">
+        <div class="col-sm-6">
+            <select id="iScreen" class="form-select" aria-label="Select Screen">
+                <option value="" selected>Loading...</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col text-center">
+            <button id="bLayoutFull" type="button" class="layout-button full">
+                <span></span>
+            </button>
+        </div>
+        <div class="col text-center">
+            <button id="bLayoutLeft" type="button" class="layout-button left">
+                <span></span>
+            </button>
+        </div>
+        <div class="col text-center">
+            <button id="bLayoutCenter" type="button" class="layout-button center">
+                <span></span>
+            </button>
+        </div>
+        <div class="col text-center">
+            <button id="bLayoutRight" type="button" class="layout-button right">
+                <span></span>
+            </button>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col">
+            <div id="videoWrapper">
+                <div id="videoLeft"></div>
+                <div id="videoCenter"></div>
+                <div id="videoRight"></div>
+                <video id="video"></video>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="../../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="./settings.js"></script>
+</body>
+</html>

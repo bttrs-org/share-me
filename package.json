@@ -1,0 +1,23 @@
+{
+  "name": "share-me",
+  "productName": "Share Me!",
+  "version": "1.0.0",
+  "description": "",
+  "author": "",
+  "license": "GNU GPLv3",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-packager . --out=dist --overwrite"
+  },
+  "dependencies": {
+    "bootstrap": "^5.1.3",
+    "electron-store": "^8.0.1",
+    "loglevel": "^1.8.0",
+    "loglevel-plugin-prefix": "^0.8.4"
+  },
+  "devDependencies": {
+    "electron": "^18.0.3",
+    "electron-packager": "^15.4.0"
+  }
+}

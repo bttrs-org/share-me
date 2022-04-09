@@ -95,11 +95,11 @@ function createWindows() {
     settingsWindow.setContentProtection(true);
     settingsWindow.on('closed', () => app.quit());
 
-    if (debugWindows) {
-        // rendererWindow.webContents.openDevTools();
-        // overlayWindow.webContents.openDevTools();
-        settingsWindow.webContents.openDevTools();
-    }
+    // if (debugWindows) {
+    //     rendererWindow.webContents.openDevTools();
+    //     overlayWindow.webContents.openDevTools();
+    //     settingsWindow.webContents.openDevTools();
+    // }
 
     return { rendererWindow, overlayWindow, settingsWindow };
 }

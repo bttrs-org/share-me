@@ -151,6 +151,8 @@ async function setSettings(settings, rendererWindow, overlayWindow) {
 async function init() {
     const { rendererWindow, overlayWindow, settingsWindow } = createWindows();
 
+    ipcMain.handle('get_store_value', (evt, key) => store.get(key));
+    ipcMain.on('set_store_values', (evt, values) => store.set(values));
     ipcMain.handle('get_sources', (evtm, thumb) => getSources(thumb));
     ipcMain.on('set_settings', (evt, settings) => setSettings(settings, rendererWindow, overlayWindow));
 

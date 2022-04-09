@@ -1,4 +1,4 @@
-const { setSettings, getSources } = window.API;
+const { getStoreValue, setStoreValues, getSources, setSettings } = window.API;
 
 const LAYOUT_FULL = 'F';
 const LAYOUT_LEFT = 'L';
@@ -15,35 +15,17 @@ const bLayoutLeft = document.getElementById('bLayoutLeft');
 const bLayoutCenter = document.getElementById('bLayoutCenter');
 const bLayoutRight = document.getElementById('bLayoutRight');
 let selectedSource = null;
-let selectedLayout = LAYOUT_FULL;
+let selectedLayout = null;
 let sources = null;
 
-function selectLayout(layout) {
-    if (layout !== selectedLayout) {
-        selectedLayout = layout;
-        dataChanged();
-    }
-}
-
-function selectSource() {
-    const sourceId = iScreen.value;
-    if (!sourceId || !sources) {
-        return;
-    }
-    if (!selectedSource || (sourceId !== selectedSource.id)) {
-        selectedSource = sources.find(s => s.id === sourceId);
-        dataChanged();
-    }
-}
-
-function createSourceOptions(sources) {
-    iScreen.innerHTML = '';
-    sources.forEach((s) => {
-        const option = document.createElement('option');
-        option.value = s.id;
-        option.text = s.name;
-        iScreen.appendChild(option);
-    });
+function debounce(func, time = 100) {
+    let timer;
+    return (event) => {
+        if (timer) {
+            clearTimeout(timer);
+        }
+        timer = setTimeout(func, time, event);
+    };
 }
 
 async function getStream(sourceId) {
@@ -64,12 +46,48 @@ async function getStream(sourceId) {
     return stream;
 }
 
-function updateVideoElement() {
-    const d = selectedSource.displayBounds.height / selectedSource.displayBounds.width;
+function renderSourceOptions(sources, selected = null) {
+    iScreen.innerHTML = '';
+    sources.forEach((s) => {
+        const option = document.createElement('option');
+        option.value = s.id;
+        option.text = s.name;
+        if (selected && selected.id === s.id) {
+            option.selected = true;
+        }
+        iScreen.appendChild(option);
+    });
+}
+
+function updateActiveLayoutClass(layout) {
+    bLayoutFull.classList.remove('active');
+    bLayoutLeft.classList.remove('active');
+    bLayoutCenter.classList.remove('active');
+    bLayoutRight.classList.remove('active');
+
+    if (layout === LAYOUT_FULL) {
+        bLayoutFull.classList.add('active');
+    } else if (layout === LAYOUT_LEFT) {
+        bLayoutLeft.classList.add('active');
+    } else if (layout === LAYOUT_CENTER) {
+        bLayoutCenter.classList.add('active');
+    } else if (layout === LAYOUT_RIGHT) {
+        bLayoutRight.classList.add('active');
+    }
+}
+
+function updateVideoElement(source, layout) {
+    if (!source || !layout) {
+        return;
+    }
+
+    const d = source.displayBounds.height / source.displayBounds.width;
     const h = d * dVideo.offsetWidth;
     dVideo.style.marginBottom = '-' + Math.round(dVideo.offsetHeight - h) + 'px';
+    console.log(d);
+    console.log(h);
 
-    if (selectedLayout === LAYOUT_FULL) {
+    if (layout === LAYOUT_FULL) {
         dVideoLeft.style.width = '0';
         dVideoCenter.style.width = '100%';
         dVideoCenter.style.left = '0';
@@ -77,15 +95,15 @@ function updateVideoElement() {
     } else {
         dVideoCenter.style.width = '50%';
 
-        if (selectedLayout === LAYOUT_LEFT) {
+        if (layout === LAYOUT_LEFT) {
             dVideoLeft.style.width = '0';
             dVideoRight.style.width = '50%';
             dVideoCenter.style.left = '0';
-        } else if (selectedLayout === LAYOUT_CENTER) {
+        } else if (layout === LAYOUT_CENTER) {
             dVideoLeft.style.width = '25%';
             dVideoRight.style.width = '25%';
             dVideoCenter.style.left = '25%';
-        } else if (selectedLayout === LAYOUT_RIGHT) {
+        } else if (layout === LAYOUT_RIGHT) {
             dVideoLeft.style.width = '50%';
             dVideoRight.style.width = '0';
             dVideoCenter.style.left = '50%';
@@ -93,26 +111,9 @@ function updateVideoElement() {
     }
 }
 
-function updateActiveLayoutClass() {
-    bLayoutFull.classList.remove('active');
-    bLayoutLeft.classList.remove('active');
-    bLayoutCenter.classList.remove('active');
-    bLayoutRight.classList.remove('active');
-
-    if (selectedLayout === LAYOUT_FULL) {
-        bLayoutFull.classList.add('active');
-    } else if (selectedLayout === LAYOUT_LEFT) {
-        bLayoutLeft.classList.add('active');
-    } else if (selectedLayout === LAYOUT_CENTER) {
-        bLayoutCenter.classList.add('active');
-    } else if (selectedLayout === LAYOUT_RIGHT) {
-        bLayoutRight.classList.add('active');
-    }
-}
-
-function getSourceBounds() {
-    const b = selectedSource.displayBounds;
-    switch (selectedLayout) {
+function getSourceBounds(source, layout) {
+    const b = source.displayBounds;
+    switch (layout) {
         case LAYOUT_FULL:
             return { x: 0, y: 0, width: b.width, height: b.height };
         case LAYOUT_LEFT:
@@ -124,60 +125,97 @@ function getSourceBounds() {
     }
 }
 
-async function dataChanged() {
-    if (!selectedSource) {
+async function dataChanged(source, layout) {
+    if (!source) {
         return;
     }
-    selectedLayout = selectedLayout || LAYOUT_FULL;
+    layout = layout || LAYOUT_FULL;
 
     const settings = {
-        sourceId: selectedSource.id,
-        displayBounds: { ...selectedSource.displayBounds },
-        sourceBounds: getSourceBounds(),
+        sourceId: source.id,
+        displayBounds: { ...source.displayBounds },
+        sourceBounds: getSourceBounds(source, layout),
     };
 
-    updateActiveLayoutClass();
+    if (selectedLayout !== layout) {
+        updateActiveLayoutClass(layout);
+    }
 
     try {
-        const stream = await getStream(settings.sourceId);
-        if (!stream) {
-            throw new Error('No videos stream available');
+        if (!selectedSource || selectedSource.id !== source.id) {
+            const stream = await getStream(settings.sourceId);
+            if (!stream) {
+                throw new Error('No video stream available');
+            }
+            dVideo.srcObject = stream;
+            dVideo.onloadedmetadata = () => {
+                video.play().then(() => {
+                    updateVideoElement(source, layout);
+                });
+            };
+        } else {
+            updateVideoElement(source, layout);
         }
-
-        dVideo.srcObject = stream;
-        dVideo.onloadedmetadata = () => {
-            updateVideoElement();
-            video.play();
-        };
     } catch (e) {
         log.error(e);
     }
 
+    selectedSource = source;
+    selectedLayout = layout;
     setSettings(settings);
 }
 
 async function init() {
-    sources = await getSources(400);
-    selectedSource = sources[0];
-    createSourceOptions(sources);
-    dataChanged();
+    const [savedSource, savedLayout, currentSources] = await Promise.all([
+        getStoreValue('source'),
+        getStoreValue('layout'),
+        getSources(),
+    ]);
+    sources = currentSources;
+
+    if (!sources.length) {
+        renderSourceOptions({ id: '', name: 'No sources found' });
+        return;
+    }
+
+    const layout = (savedLayout && [LAYOUT_FULL, LAYOUT_LEFT, LAYOUT_CENTER, LAYOUT_RIGHT].indexOf(savedLayout) !== -1)
+        ? savedLayout
+        : LAYOUT_FULL;
+    const source = (savedSource && sources.find(s => s.id === savedSource)) || sources[0];
+
+    renderSourceOptions(sources, source);
+    dataChanged(source, layout);
+
+    setStoreValues({
+        source: source.id,
+        layout,
+    });
 }
 
-function debounce(func, time = 100) {
-    let timer;
-    return (event) => {
-        if (timer) {
-            clearTimeout(timer);
-        }
-        timer = setTimeout(func, time, event);
-    };
+function layoutSelected(layout) {
+    if (layout) {
+        dataChanged(selectedSource, layout);
+        setStoreValues({ layout });
+    }
+}
+
+function sourceSelectChanged() {
+    const sourceId = iScreen.value;
+    if (!sourceId || !sources) {
+        return;
+    }
+    const source = sources.find(s => s.id === sourceId);
+    if (source) {
+        dataChanged(source, selectedLayout);
+        setStoreValues({ source: source.id });
+    }
 }
 
 // EVENTS
-iScreen.addEventListener('change', () => selectSource());
-bLayoutFull.addEventListener('click', () => selectLayout(LAYOUT_FULL));
-bLayoutLeft.addEventListener('click', () => selectLayout(LAYOUT_LEFT));
-bLayoutCenter.addEventListener('click', () => selectLayout(LAYOUT_CENTER));
-bLayoutRight.addEventListener('click', () => selectLayout(LAYOUT_RIGHT));
+iScreen.addEventListener('change', sourceSelectChanged);
+bLayoutFull.addEventListener('click', () => layoutSelected(LAYOUT_FULL));
+bLayoutLeft.addEventListener('click', () => layoutSelected(LAYOUT_LEFT));
+bLayoutCenter.addEventListener('click', () => layoutSelected(LAYOUT_CENTER));
+bLayoutRight.addEventListener('click', () => layoutSelected(LAYOUT_RIGHT));
 document.addEventListener('DOMContentLoaded', init, false);
-window.addEventListener('resize', debounce(updateVideoElement, 500));
+window.addEventListener('resize', debounce(() => updateVideoElement(selectedSource, selectedLayout), 500));

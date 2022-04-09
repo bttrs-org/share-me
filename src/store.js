@@ -1,28 +1,19 @@
 const path = require('path');
+const { app } = require('electron');
 const Store = require('electron-store');
 
 const schema = {
-    screen: {
-        type: 'object',
-        properties: {
-            x: { type: 'number', minimum: 0 },
-            y: { type: 'number', minimum: 0 },
-            w: { type: 'number', minimum: 0 },
-            h: { type: 'number', minimum: 0 },
-        },
+    source: {
+        type: 'string',
     },
-    output: {
-        type: 'object',
-        properties: {
-            w: { type: 'number', minimum: 0 },
-            h: { type: 'number', minimum: 0 },
-        },
+    layout: {
+        type: 'string',
     },
 };
 
 const store = new Store({
     schema,
-    cwd: path.join(__dirname, '..', 'config'),
+    cwd: path.join(app.getAppPath(), 'config'),
 });
 
 module.exports = store;

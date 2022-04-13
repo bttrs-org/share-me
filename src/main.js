@@ -4,8 +4,7 @@ const { app, BrowserWindow, screen, ipcMain, desktopCapturer } = require('electr
 const log = require('./log')('main');
 const store = require('./store');
 
-const isDev = process.env.NODE_ENV === 'development';
-const debugWindows = isDev;
+const debugWindows = false; // process.env.NODE_ENV === 'development';
 
 app.commandLine.appendSwitch('high-dpi-support', '1');
 app.commandLine.appendSwitch('force-device-scale-factor', '1');
@@ -56,8 +55,7 @@ function createWindows() {
 
     // OVERLAY WINDOW
     const overlayWindow = new BrowserWindow({
-        title: ' ',
-        parent: rendererWindow,
+        title: 'Overlay Window - don\'t Share me!',
         x: 0,
         y: 0,
         width: 0,
@@ -76,7 +74,6 @@ function createWindows() {
         },
     });
     overlayWindow.setMenuBarVisibility(false);
-    // overlayWindow.setContentProtection(true);
     overlayWindow.on('closed', () => app.quit());
 
     // SETTINGS WINDOW
@@ -95,11 +92,14 @@ function createWindows() {
     settingsWindow.setContentProtection(true);
     settingsWindow.on('closed', () => app.quit());
 
-    // if (debugWindows) {
-    //     rendererWindow.webContents.openDevTools();
-    //     overlayWindow.webContents.openDevTools();
-    //     settingsWindow.webContents.openDevTools();
-    // }
+    // rendererWindow.webContents.openDevTools();
+    // overlayWindow.webContents.openDevTools();
+    // settingsWindow.webContents.openDevTools();
+
+    rendererWindow.on('focus', () => {
+        overlayWindow.focus();
+        overlayWindow.focusOnWebView();
+    });
 
     return { rendererWindow, overlayWindow, settingsWindow };
 }
@@ -126,7 +126,6 @@ async function getSources(thumb) {
             name: s.name,
             displayId: s.display_id,
             displayBounds: display.workArea,
-            // workArea: display.workArea,
             thumb: s.thumbnail.getSize().width ? s.thumbnail.toDataURL() : '',
         };
     }).filter(s => !!s);
@@ -162,6 +161,9 @@ async function init() {
         settingsWindow.loadFile(path.join(__dirname, 'settings', 'settings.html')),
     ]);
 
+    overlayWindow.focus();
+    overlayWindow.focusOnWebView();
+    settingsWindow.focus();
     settingsWindow.focusOnWebView();
 }
 

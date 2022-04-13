@@ -26,7 +26,8 @@ async function getStream(sourceId) {
 }
 
 async function setSettings(settings) {
-    const { x, y, sourceId } = settings;
+    const { sourceId, sourceBounds } = settings;
+    const { x, y } = sourceBounds;
 
     video.style.left = `-${x}px`;
     video.style.top = `-${y}px`;
